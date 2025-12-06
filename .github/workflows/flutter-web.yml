@@ -52,3 +52,4 @@ jobs:
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}  # GitHub token for deployment
           publish_dir: ./build/web                    # Folder to publish
+          publish_branch: main
