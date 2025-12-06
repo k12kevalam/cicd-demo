@@ -53,5 +53,6 @@ jobs:
           # github_token: ${{ secrets.GITHUB_TOKEN }}  # GitHub token for deployment
           github_token: ${{ secrets.GP_PAGE_PAT }}  # Personal github token for deployment
           publish_dir: ./build/web                    # Folder to publish
-          destination_repo: k12kevalam/k12kevalam.github.io
+          # destination_repo: k12kevalam/k12kevalam.github.io
+          external_repository: k12kevalam/k12kevalam.github.io
           publish_branch: main
