@@ -50,9 +50,8 @@ jobs:
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v3
         with:
-          # github_token: ${{ secrets.GITHUB_TOKEN }}  # GitHub token for deployment
-          personal_token: ${{ secrets.GP_PAGE_PAT }}  # Personal github token for deployment
+          # github_token: ${{ secrets.GITHUB_TOKEN }}  # GitHub token for deployment (For same repo only)
+          personal_token: ${{ secrets.GP_PAGE_PAT }}  # Personal github token for deployment (For different repo, set GP_PAGE_PAT in github repo as well)
           publish_dir: ./build/web                    # Folder to publish
-          # destination_repo: k12kevalam/k12kevalam.github.io
           external_repository: k12kevalam/k12kevalam.github.io
           publish_branch: main

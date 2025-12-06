@@ -1,0 +1,111 @@
+name: Flutter Android CI/CD
+
+on:
+  push:
+    branches: [ main ]            # Run on push to main
+  pull_request:
+    branches: [ main ]            # Run on PR to main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest        # Ubuntu runner
+
+    steps:
+      # ----------------------------
+      # Step 1: Checkout project code
+      # ----------------------------
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # ----------------------------
+      # Step 2: Install Flutter
+      # ----------------------------
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          # channel: stable         # Use stable Flutter channel
+          flutter-version: '3.35.6'
+
+      # ----------------------------
+      # Step 3: Install Java (required for Android)
+      # ----------------------------
+      - name: Set up JDK
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'temurin'
+          java-version: '17'      # Flutter recommends JDK 17
+
+      # ----------------------------
+      # Step 4: Decode keystore for signing
+      # ----------------------------
+      - name: Setup signing key
+        run: |
+          echo "$KEYSTORE_BASE64" | base64 --decode > android/app/my-release-key.jks
+        env:
+          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+
+      # ----------------------------
+      # Step 5: Export signing env variables
+      # ----------------------------
+      - name: Export signing environment variables
+        run: |
+          echo "KEYSTORE_PASSWORD=${KEYSTORE_PASSWORD}" >> $GITHUB_ENV
+          echo "KEY_ALIAS=${KEY_ALIAS}" >> $GITHUB_ENV
+          echo "KEY_PASSWORD=${KEY_PASSWORD}" >> $GITHUB_ENV
+        env:
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+
+      # ----------------------------
+      # Step 6: Install Flutter dependencies
+      # ----------------------------
+      - name: Install dependencies
+        run: flutter pub get
+
+      # ----------------------------
+      # Step 7: Run tests
+      # ----------------------------
+      - name: Run tests
+        run: flutter test
+
+      # ----------------------------
+      # Step 8: Build Release APK
+      # ----------------------------
+      - name: Build APK
+        run: flutter build apk --release
+
+      # ----------------------------
+      # Step 9: Build Release AAB (required for Play Store)
+      # ----------------------------
+      - name: Build AAB
+        run: flutter build appbundle --release
+
+      # ----------------------------
+      # Step 10: Upload APK artifact
+      # ----------------------------
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-apk
+          path: build/app/outputs/flutter-apk/app-release.apk
+
+      # ----------------------------
+      # Step 11: Upload AAB artifact
+      # ----------------------------
+      - name: Upload AAB
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-aab
+          path: build/app/outputs/bundle/release/app-release.aab
+
+      # ----------------------------
+      # Step 12: Deploy AAB to Google Play
+      # ----------------------------
+      - name: Deploy to Google Play
+        uses: r0adkll/upload-google-play@v1
+        with:
+          serviceAccountJson: ${{ secrets.PLAY_STORE_JSON }}  # JSON from Google Play Console
+          packageName: com.example.app                    # CHANGE WITH ACTUAL ONE
+          releaseFile: build/app/outputs/bundle/release/app-release.aab
+          track: production                                     # internal / alpha / beta / production
