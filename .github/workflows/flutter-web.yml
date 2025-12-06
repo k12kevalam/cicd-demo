@@ -1,0 +1,54 @@
+# Workflow name shown in GitHub Actions
+name: Flutter Web CI/CD
+
+on:
+  push:
+    # Trigger workflow when code is pushed to the "main" branch
+    branches: [ main ]
+  pull_request:
+    # Trigger workflow when a pull request targets the "main" branch
+    branches: [ main ]
+
+jobs:
+  build:
+    # Use GitHub-hosted Ubuntu virtual machine for building
+    runs-on: ubuntu-latest
+
+    steps:
+      # This step checks out your repository code so the workflow can access it
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # This action downloads and sets up Flutter so we can run flutter commands
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          # Install the stable version of Flutter
+          # channel: stable
+          flutter-version: '3.35.6'
+
+      # This installs all the packages your Flutter project needs
+      - name: Install dependencies
+        run: flutter pub get
+
+      # This runs your unit and widget tests to make sure code is working
+      #- name: Run tests
+      #  run: flutter test
+
+      # This compiles your Flutter project into a web app in the build/web folder
+      - name: Build Flutter Web
+        run: flutter build web --release
+
+      # This saves the build/web folder so it can be downloaded or used in a deploy job
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: flutter-web-build       # Name of the artifact
+          path: build/web               # Folder to upload
+
+
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}  # GitHub token for deployment
+          publish_dir: ./build/web                    # Folder to publish
